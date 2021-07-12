@@ -1,17 +1,25 @@
-FROM fluent/fluentd:v1.10-1
-MAINTAINER YOUR_NAME <...@...>
+FROM fluent/fluentd:v1.13-debian-1
 
+# Use root account to use apt
 USER root
 
-RUN apk add --no-cache --update --virtual .build-deps \
-        sudo build-base ruby-dev \
- # cutomize following instruction as you wish
+# below RUN includes plugin as examples elasticsearch is not required
+# you may customize including plugins as you wish
+RUN buildDeps="sudo make gcc g++ libc-dev" \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends $buildDeps \
  && sudo gem install fluent-plugin-elasticsearch \
  && sudo gem sources --clear-all \
- && apk del .build-deps \
- && rm -rf /home/fluent/.gem/ruby/2.5.0/cache/*.gem
+ && SUDO_FORCE_REMOVE=yes \
+    apt-get purge -y --auto-remove \
+                  -o APT::AutoRemove::RecommendsImportant=false \
+                  $buildDeps \
+ && rm -rf /var/lib/apt/lists/* \
+ && rm -rf /tmp/* /var/tmp/* /usr/lib/ruby/gems/*/cache/*.gem
 
 COPY fluent.conf /fluentd/etc/
 COPY entrypoint.sh /bin/
+
+RUN fluent-gem install fluent-plugin-netflow
 
 USER fluent
