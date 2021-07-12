@@ -1,4 +1,5 @@
-docker build . --tag=fluentd-os:latest
+docker build . --tag=quay.io/mmaciasl/fluentd-os:latest
+
 kubectl -n ovn-kubernetes edit ds ovnkube-node
 
 
