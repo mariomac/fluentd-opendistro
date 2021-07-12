@@ -46,12 +46,6 @@ Vagrant.configure("2") do |config|
     # initialization scripts
     config.vm.provision "shell", inline: $install_packages
 
-    config.trigger.after :up do |t|
-      t.info = "rsync auto"
-      t.run = {inline: "bash -c 'vagrant rsync-auto &'"}
-    end
-
-    config.vm.synced_folder ".", "/vagrant", type: "rsync",
-        rsync__exclude: ".git/"
+    config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
 end
 
