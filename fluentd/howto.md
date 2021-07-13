@@ -1,9 +1,15 @@
+Requirements: 8GB
+
 docker build . --tag=quay.io/mmaciasl/fluentd-os:latest
 
+deploy -f deployment.yml
+
 kubectl -n ovn-kubernetes edit ds ovnkube-node
+meter en OVN_NETFLOW_TARGETS el host/port que sale del `describe svc fluentd-netflow-service`
 
 
+* TODO: provide as sidecar/federation for cu rrent Openshift fluentd?
 
+kubectl port-forward deployments/opendistro 5601:5601
 
-
-* TODO: provide as sidecar/federation for current Openshift fluentd?
+http://localhost:5601/app/login

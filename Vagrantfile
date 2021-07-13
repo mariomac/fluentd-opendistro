@@ -40,12 +40,15 @@ Vagrant.configure("2") do |config|
     config.vm.provider "virtualbox" do |v|
         v.name = "Fedora KIND"
         v.cpus = 4
-        v.memory = 4096
+        v.memory = 8192
     end
 
     # initialization scripts
     config.vm.provision "shell", inline: $install_packages
 
+    # sharing info with host
     config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+    config.vm.network "forwarded_port", guest: 5601, host: 5601
+
 end
 
