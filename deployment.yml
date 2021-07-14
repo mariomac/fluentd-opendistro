@@ -5,10 +5,38 @@ metadata:
   labels:
     name: flows
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-conf
+data:
+  fluent.conf: |
+    <source>
+    type netflow
+    tag netflow.event
+    bind 0.0.0.0
+    port 2055
+    cache_ttl 6000
+    versions [5, 9]
+    </source>
+
+    <match netflow.event>
+    @type elasticsearch
+    host opendistro.flows.svc.cluster.local
+    port 9200
+    scheme https
+    user "admin"
+    password "admin"
+    ssl_verify false
+    </match>
+    <match netflow.event>
+    @type stdout
+    </match>
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fluentd-netflow-collector
+  name: fluentd
   namespace: flows
 spec:
   replicas: 1
@@ -20,14 +48,25 @@ spec:
       labels:
         app: fluentd
     spec:
+      volumes:
+        - name: config-vol
+          configMap:
+            name: fluentd-conf
+            items:
+              - key: fluent.conf
+                path: fluent.conf
       containers:
         - name: fluentd
           image: quay.io/mmaciasl/fluentd-os:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /fluentd/etc
+              name: config-vol
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: fluentd-netflow-service
+  name: fluentd
   namespace: flows
 spec:
   type: NodePort
@@ -38,37 +77,42 @@ spec:
       targetPort: 2055
       nodePort: 32055
 ---
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
   name: opendistro
   namespace: flows
   labels:
     app: opendistro
 spec:
-  replicas: 1
+  containers:
+    - name: opendistro
+      image: amazon/opendistro-for-elasticsearch:1.13.2
+      env:
+        - name: discovery.type
+          value: "single-node"
+      ports:
+        - containerPort: 9200
+    - name: opendistro-kibana
+      image: amazon/opendistro-for-elasticsearch-kibana:1.13.2
+      ports:
+        - containerPort: 5601
+      env:
+        - name: ELASTICSEARCH_URL
+          value: https://localhost:9200
+        - name: ELASTICSEARCH_HOSTS
+          value: https://localhost:9200
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opendistro
+  namespace: flows
+spec:
+  type: NodePort
   selector:
-    matchLabels:
-      app: opendistro
-  template:
-    metadata:
-      labels:
-        app: opendistro
-    spec:
-      containers:
-        - name: opendistro
-          image: amazon/opendistro-for-elasticsearch:1.13.2
-          env:
-            - name: discovery.type
-              value: "single-node"
-          ports:
-            - containerPort: 9200
-        - name: opendistro-kibana
-          image: amazon/opendistro-for-elasticsearch-kibana:1.13.2
-          ports:
-            - containerPort: 5601
-          env:
-            - name: ELASTICSEARCH_URL
-              value: https://localhost:9200
-            - name: ELASTICSEARCH_HOSTS
-              value: https://localhost:9200
+    app: opendistro
+  ports:
+    - port: 9200
+      targetPort: 9200
+      nodePort: 30200
