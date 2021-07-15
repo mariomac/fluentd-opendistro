@@ -38,12 +38,31 @@ $ kubectl describe service fluentd | grep Endpoints:
 Endpoints:                10.130.0.6:2055
 ```
 
-5. In the `ovnkube-node` DaemonSet, manually set the `OVN_NETFLOW_TARGETS` YAML value to the IP:port from the
+5. If you use KIND:
+   - In the `ovnkube-node` DaemonSet, manually set the `OVN_NETFLOW_TARGETS` YAML value to the IP:port from the
    previous step:
+    ```
+    kubectl -n ovn-kubernetes edit ds ovnkube-node
+    ```
+    If you use OpenShift (from [Netflow or sFlow on OpenShift 4 w/OVN Kubernetes](https://gist.github.com/williamcaban/5508506a614b007860f82576148acbff)) 
+    1. Login into any ovnkube-node node
+    ```
+    $ oc get pods -n openshift-ovn-kubernetes
+    NAME                   READY   STATUS    RESTARTS   AGE
+    ovnkube-master-dx2f6   6/6     Running   4          3h38m
+    ovnkube-node-5rlp7     4/4     Running   0          8m29s
+    ovnkube-node-jql9r     4/4     Running   0          3h23m
+    ovnkube-node-lwkbj     4/4     Running   0          3h38m
    
-```
-kubectl -n ovn-kubernetes edit ds ovnkube-node
-```
+    $ oc -n openshift-ovn-kubernetes exec -it ovnkube-node-5rlp7 -- bash
+    ```
+    2. From there, set the netflow target to the local fluentd endpoint:
+    
+    ```
+    [root@ip-10-0-184-155 ~]# ovs-vsctl -- --id=@netflow create netflow target="\"10.130.0.17:2055\"" -- set bridge br-int netflow=@netflow
+    ```    
+    (change `10.130.0.17:2055` by the IP:port obtained in the step 4)
+
 
 6. To use Kibana, enable port forwarding to the opendistro pod:
 
@@ -51,7 +70,7 @@ kubectl -n ovn-kubernetes edit ds ovnkube-node
 kubectl port-forward --address 0.0.0.0 pods/opendistro 5601:5601
 ```
 
-Then you can open the following URL in your local host: `http://localhost:5601/`
+Then you can open the following URL in your local host: `http://localhost:5601/` (user/password: `admin`/`admin`)
 
 ## TODO
 
