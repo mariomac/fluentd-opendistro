@@ -94,6 +94,9 @@ spec:
           value: "single-node"
       ports:
         - containerPort: 9200
+      securityContext:
+        capabilities:
+          add: ["SYS_CHROOT"]
     - name: opendistro-kibana
       image: amazon/opendistro-for-elasticsearch-kibana:1.13.2
       ports:
