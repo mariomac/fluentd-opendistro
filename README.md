@@ -48,11 +48,10 @@ kubectl -n ovn-kubernetes edit ds ovnkube-node
 6. To use Kibana, enable port forwarding to the opendistro pod:
 
 ```
-kubectl port-forward --address 0.0.0.0 deployments/opendistro 5601:5601
+kubectl port-forward --address 0.0.0.0 pods/opendistro 5601:5601
 ```
 
-Then you can open the following URL in your pod: `http://<host-ip>:5601/`
-
+Then you can open the following URL in your local host: `http://localhost:5601/`
 
 ## TODO
 
