@@ -9,8 +9,12 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: fluentd-conf
+  namespace: flows
 data:
   fluent.conf: |
+    <system>
+    log_level debug
+    </system>
     <source>
     type netflow
     tag netflow.event
@@ -28,9 +32,6 @@ data:
     user "admin"
     password "admin"
     ssl_verify false
-    </match>
-    <match netflow.event>
-    @type stdout
     </match>
 ---
 apiVersion: apps/v1
